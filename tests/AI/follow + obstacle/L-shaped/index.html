@@ -1,0 +1,242 @@
+<canvas id="canvas" style="border:1px solid;"></canvas>
+<div id="debugTxt"></div>
+<button onclick="pause=false">continue</button>
+<meta name="viewport" content="width=device-width"/>
+
+<script> L = console.log </script>
+<script src="enemy.js"></script>
+<script src="control.js"></script>
+<script>
+
+	let c = canvas.getContext('2d');
+	let player = Player();
+	let enemy = Enemy();
+	let blocks = [
+	  [9,8],
+	  [10,8],
+	  [11,8],
+	  [12,8],
+	  [13,8],
+	  [14,8],
+	  [15,8],
+	  [15,7],
+	  [15,6],
+	  [15,5],
+	  ]
+	let object = [player, enemy, Enemy(), Enemy()];
+	
+	let oilblocks = [
+	 // [16,4],
+	 // [16,9],
+	 // [8,9],
+	 // [8,7],
+	 // [14,4],
+	  ]
+	
+  c.strokeStyle = 'dodgerblue'
+	function randomBetween(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+	
+	Object.defineProperty(window, 'debug', {set: content => debugTxt.textContent = content })
+	
+	let world = [];
+
+  for (let i=0; i<32; i++) {
+    let a = []
+    for (let j=0; j<32; j++) {
+        a.push(0)
+    }
+    world.push(a);
+  }
+  for (let pos of blocks) {
+    world[pos[0]][pos[1]] = 1;
+	  object.push(Block(pos[0],pos[1]))
+  }
+  for (let pos of oilblocks) {
+    // world[pos[0]][pos[1]] = 1;
+	  object.push(OilBlock(pos[0],pos[1]))
+  }
+  // add block
+  let pause = false;	
+	function update() {
+	  window.requestAnimationFrame(update);
+	  if (pause) {
+	    return
+	  }
+	  debug = '';
+	  c.clearRect(0,0,c.canvas.width,c.canvas.height)
+	  drawWorldGrid();
+	  drawEnemyPath();
+	  drawObjects()
+	}
+	
+	function drawWorldGrid() {
+	  c.beginPath(); 
+	  for (let i=0; i<world.length; i++) {
+  	  for (let j=0; j<world.length; j++) {
+        // if ([9,10,11].includes(i) && j == 7)
+    	   // c.fillRect(i*10,j*10,10,10)
+    	 //else
+    	    c.rect(i*10,j*10,10,10)
+  	  }
+	  }
+	  c.stroke();
+	}
+	
+	function drawEnemyPath() {
+	 // c.beginPath();
+	 c.fillStyle ='pink';
+	  for (let p of enemy.path) {
+	    c.fillRect(p[0]*10,p[1]*10,10,10)
+	  }
+	 c.fillStyle ='black';
+	 // c.stroke();
+	}
+	
+	function Player() {
+  	let pos = {
+  	  x: 12*10, 
+  	  y: 6*10,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	let vspeed = 2;
+  	let hspeed = 2;
+  	
+	  let bodyState = {
+      state: null,
+      change: function(stateName) {
+        this.state = bodyState[stateName];
+      },
+      idle: {
+        update: function() {
+          if (controls.left || controls.right || controls.up || controls.down)
+            bodyState.change('move');
+        }
+      },
+      move: {
+        update: function() {
+          move = false;
+          pos.l = false;
+          pos.r = false;
+          pos.b = false;
+          pos.t = false;
+          
+          if (controls.left) {
+            oldX = pos.x
+            pos.x -= vspeed;
+            pos.l = true;
+            move = true;
+          } else if (controls.right) {
+            oldX = pos.x
+            pos.x += vspeed;
+            pos.r = true;
+            move = true;
+          }
+          
+          if (controls.up) {
+            oldY = pos.y
+            pos.y -= hspeed;
+            move = true;
+            pos.t = true
+          } else if (controls.down) {
+            oldY = pos.y
+            pos.y += hspeed;
+            move = true;
+            pos.b = true
+          }
+          
+          if (!move) {
+            bodyState.change('idle');
+          }
+        }
+      },
+    };
+    bodyState.state = bodyState.idle;
+	  
+	  function updateMovement() {
+      bodyState.state.update();
+    }
+	  
+	  function update() {
+      updateMovement();
+    }
+	  
+	  let self = {
+	    pos,
+	    update,
+	  }
+	  
+	  return self;
+	}
+	
+	
+	function Block(x,y) {
+    let pos = {
+      x: x*10,
+      y: y*10,
+      w:10,
+      h:10,
+    };
+    let collide = {
+      top: true,
+      left: true,
+      right: true,
+      bottom: true,
+    };
+    
+    function update() {
+      
+    }
+    
+    return {
+      update,
+      pos,
+      collide,
+      type: 'box',
+    }
+  }
+  
+  function OilBlock(x,y) {
+    let pos = {
+      x: x*10,
+      y: y*10,
+      w:10,
+      h:10,
+    };
+    let collide = {
+      top: true,
+      left: true,
+      right: true,
+      bottom: true,
+    };
+    
+    function update() {
+      
+    }
+    
+    return {
+      update,
+      pos,
+      collide,
+      type: 'oilbox',
+    }
+  }
+	
+	function drawObjects() {
+	  for (let i=0; i<object.length; i++) {
+	    object[i].update();
+	    let o = object[i];
+	    if (o.type === 'oilbox')
+	    c.fillStyle ='orange'
+	    else
+	    c.fillStyle ='black'
+	    c.fillRect(object[i].pos.x, object[i].pos.y, object[i].pos.w, object[i].pos.h);
+	  }
+	}
+	
+	attachListener();
+	update();
+
+</script>

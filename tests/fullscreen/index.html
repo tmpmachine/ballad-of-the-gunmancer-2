@@ -1,0 +1,132 @@
+<canvas id="canvas" style="border:1px solid;"></canvas>
+<button onclick="display.requestFullScreen()">Full screen</button>
+
+<script> L = console.log </script>
+<script src="display.js"></script>
+<script src="control.js"></script>
+<script>
+
+  let display = Display(canvas);
+	let c = canvas.getContext('2d');
+	let enemy = Enemy();
+	let player = Player();
+	let object = [player, enemy];
+	
+	function update() {
+	  c.clearRect(0,0,c.canvas.width,c.canvas.height)
+	  c.fillStyle = 'white';
+	  c.fillRect(0,0,c.canvas.width,c.canvas.height)
+	  c.fillStyle = 'black';
+	  window.requestAnimationFrame(update);
+	  drawObjects()
+	}
+	
+	function Enemy() {
+	  let pos = {
+  	  x: 10, 
+  	  y: 20,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	
+  	function update() {
+  	}
+  	
+	  let self = {
+	    pos,
+	    update,
+	  }
+	  
+	  return self;
+	}
+	
+	function Player() {
+  	let pos = {
+  	  x: 150, 
+  	  y: 120,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	let vspeed = 2;
+  	let hspeed = 2;
+  	
+	  let bodyState = {
+      state: null,
+      change: function(stateName) {
+        this.state = bodyState[stateName];
+      },
+      idle: {
+        update: function() {
+          if (controls.left || controls.right || controls.up || controls.down)
+            bodyState.change('move');
+        }
+      },
+      move: {
+        update: function() {
+          move = false;
+          pos.l = false;
+          pos.r = false;
+          pos.b = false;
+          pos.t = false;
+          
+          if (controls.left) {
+            oldX = pos.x
+            pos.x -= vspeed;
+            pos.l = true;
+            move = true;
+          } else if (controls.right) {
+            oldX = pos.x
+            pos.x += vspeed;
+            pos.r = true;
+            move = true;
+          }
+          
+          if (controls.up) {
+            oldY = pos.y
+            pos.y -= hspeed;
+            move = true;
+            pos.t = true
+          } else if (controls.down) {
+            oldY = pos.y
+            pos.y += hspeed;
+            move = true;
+            pos.b = true
+          }
+          
+          if (!move) {
+            bodyState.change('idle');
+          }
+        }
+      },
+    };
+    bodyState.state = bodyState.idle;
+	  
+	  function updateMovement() {
+      bodyState.state.update();
+    }
+	  
+	  function update() {
+      updateMovement();
+    }
+	  
+	  let self = {
+	    pos,
+	    update,
+	  }
+	  
+	  return self;
+	}
+	
+	
+	function drawObjects() {
+	  for (let i=0; i<object.length; i++) {
+	    object[i].update();
+	    c.fillRect(object[i].pos.x, object[i].pos.y, object[i].pos.w, object[i].pos.h);
+	  }
+	}
+	
+	attachListener();
+	update();
+	display.init();
+
+</script>

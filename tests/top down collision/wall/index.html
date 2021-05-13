@@ -1,0 +1,207 @@
+<canvas id="canvas" style="border:1px solid;"></canvas>
+
+<script> L = console.log </script>
+<script src="control.js"></script>
+<script>
+
+	let c = canvas.getContext('2d');
+	let player = Player();
+	let object = [player];
+	
+	function update() {
+	  c.clearRect(0,0,c.canvas.width,c.canvas.height)
+	  window.requestAnimationFrame(update);
+	  drawObjects()
+	  c.drawImage(world, 0, 0)
+	}
+	
+	function Player() {
+  	let pos = {
+  	  x: 150, 
+  	  y: 75,
+  	  oldX: 150,
+  	  oldY: 75,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	let vspeed = 2;
+  	let hspeed = 2;
+  	
+	  let bodyState = {
+      state: null,
+      change: function(stateName) {
+        this.state = bodyState[stateName];
+      },
+      idle: {
+        update: function() {
+          if (controls.left || controls.right || controls.up || controls.down)
+            bodyState.change('move');
+        }
+      },
+      move: {
+        update: function() {
+          move = false;
+          pos.l = false;
+          pos.r = false;
+          pos.b = false;
+          pos.t = false;
+          
+          if (controls.left) {
+            pos.oldX = pos.x
+            pos.x -= vspeed;
+            pos.l = true;
+            move = true;
+          } else if (controls.right) {
+            pos.oldX = pos.x
+            pos.x += vspeed;
+            pos.r = true;
+            move = true;
+          }
+          
+          if (controls.up) {
+            pos.oldY = pos.y
+            pos.y -= hspeed;
+            move = true;
+            pos.t = true
+          } else if (controls.down) {
+            pos.oldY = pos.y
+            pos.y += hspeed;
+            move = true;
+            pos.b = true
+          }
+          
+          if (!move) {
+            bodyState.change('idle');
+          }
+        }
+      },
+    };
+    bodyState.state = bodyState.idle;
+	  
+	  function updateMovement() {
+      bodyState.state.update();
+    }
+	  
+	  function update() {
+      updateMovement();
+      handleCollision();
+    }
+    
+	  function isCollideTop(target) {
+      if (pos.y + pos.h > target.pos.y && pos.oldY + pos.h <= target.pos.y) {
+        if (pos.x + pos.w > target.pos.x && pos.x < target.pos.x + target.pos.w) {
+          pos.y = target.pos.y - pos.h;
+        }
+      }
+    }
+    
+    function isCollideBottom(target) {
+      if (pos.y < target.pos.y + target.pos.h && pos.oldY >= target.pos.y + target.pos.h) {
+        if (pos.x + pos.w > target.pos.x && pos.x < target.pos.x + target.pos.w) {
+          pos.y = target.pos.y + target.pos.h;
+        }
+      }
+    }
+    
+    
+    function isCollideRight(target) {
+      if (pos.x < target.pos.x + target.pos.w && pos.oldX >= target.pos.x + target.pos.w && pos.y + pos.h > target.pos.y && pos.y < target.pos.y + target.pos.h) {
+        pos.x = target.pos.x + target.pos.w;
+      }
+    }
+    
+    function isCollideLeft(target) {
+      if (pos.x + pos.w > target.pos.x && pos.oldX + pos.w <= target.pos.x && pos.y + pos.h > target.pos.y && pos.y < target.pos.y + target.pos.h) {
+        pos.x = target.pos.x - pos.w;
+      }
+    }
+    
+    
+    function handleCollision() {
+      for (let i=0; i<object.length; i++) {
+        if (object[i].type == 'box') {
+            let o = object[i];
+            if (o.collide.top && pos.b)
+              isCollideTop(o);
+            else if (o.collide.bottom && pos.t)
+              isCollideBottom(o);
+            if (o.collide.left && pos.r)
+              isCollideLeft(o);
+            else if (o.collide.right && pos.l)
+              isCollideRight(o);
+        }
+      }
+    }
+	  
+	  
+	  let self = {
+	    pos,
+	    update,
+	  }
+	  
+	  return self;
+	}
+	
+	
+	function drawObjects() {
+	  for (let i=0; i<object.length; i++) {
+	    object[i].update();
+	    c.fillRect(object[i].pos.x, object[i].pos.y, object[i].pos.w, object[i].pos.h);
+	  }
+	}
+	
+// 	
+//   
+// 
+
+  let world = document.createElement('canvas');
+  let w = world.getContext('2d');
+  
+	function drawGameWorld() {
+    fetch('atlas.json').then(r=>r.json()).then(json => {
+      let tileSize = 18;
+         for (var i = 0; i < json.objects.length; i++) {
+          let tile = json.objects[i];
+          let x = tile[0]*tileSize;
+          let y = tile[1]*tileSize;
+          let type = tile[2];
+          w.fillRect(x,y,tileSize,tileSize);
+          object.push(Block({
+            pos:{
+              x,
+              y,
+              w:tileSize,
+              h:tileSize
+            },
+            collide: {
+              top: [0,4,5,8,10,11,13,14].includes(type),
+              left: [1,4,5,6,9,10,11,12].includes(type),
+              bottom: [2,4,6,7,11,12,13,14].includes(type),
+              right: [3,4,7,8,9,10,12,13].includes(type),
+            }
+          }));
+        }
+    });
+  }
+  
+  function Block(data) {
+    let pos = data.pos;
+    let collide = data.collide;
+    
+    function update() {
+      
+    }
+    
+    return {
+      update,
+      pos,
+      collide,
+      type: 'box',
+    }
+  }
+	
+	attachListener();
+	update();
+	drawGameWorld();
+
+</script>

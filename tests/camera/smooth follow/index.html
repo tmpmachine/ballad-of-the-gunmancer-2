@@ -1,0 +1,167 @@
+<meta name="viewport" content="width=device-width"/>
+
+<canvas id="canvas" style="border:1px solid;"></canvas>
+<canvas id="renderCanvas" style="border:1px solid;"></canvas>
+
+<script> L = console.log </script>
+<script src="control.js"></script>
+<script>
+
+	let c = canvas.getContext('2d');
+	let cr = renderCanvas.getContext('2d');
+	let enemy = Enemy();
+	let player = Player();
+	let cam = Cam(player);
+	let object = [player, enemy, cam];
+	let viewport = {
+    x: 0,
+    y: 0,
+    width: canvas.width,
+    height: canvas.height,
+  }
+	
+	function update() {
+	  cr.clearRect(0,0,c.canvas.width,c.canvas.height)
+	  window.requestAnimationFrame(update);
+	  drawObjects()
+	  c.clearRect(0,0,canvas.width,canvas.height)
+	  
+	  viewport.x = cam.pos.x-viewport.width/2
+	  viewport.y = cam.pos.y-viewport.height/2
+	  c.drawImage(renderCanvas, viewport.x, viewport.y, viewport.width, viewport.height, 0, 0, viewport.width, viewport.height);
+	}
+	
+	function drawObjects() {
+	  for (let i=0; i<object.length; i++) {
+	    object[i].update();
+	    cr.fillRect(object[i].pos.x, object[i].pos.y, object[i].pos.w, object[i].pos.h);
+	  }
+	}
+	
+	function Cam(target) {
+    let pos = {
+      x: 0,
+      y: 0,
+      w:5,
+      h:5,
+    }
+    
+    function update() {
+      // snap cam to world edge
+      // if (viewport.x > pos.x)
+      // pos.x += (Math.max(target.pos.x, viewport.x) - pos.x) * 0.05
+      // else
+      
+      pos.x += (target.pos.x - pos.x) * 0.05
+       
+      pos.y += (target.pos.y - pos.y) * 0.05
+    }
+      
+    let self = {
+      pos,
+      update,
+    };
+    
+    return self;
+	}
+	
+	function Enemy() {
+	  let pos = {
+  	  x: 10, 
+  	  y: 20,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	
+  	function update() {
+  	}
+  	
+	  let self = {
+	    pos,
+	    update,
+	  }
+	  
+	  return self;
+	}
+	
+	function Player() {
+  	let pos = {
+  	  x: 150, 
+  	  y: 120,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	let vspeed = 2;
+  	let hspeed = 2;
+  	
+	  let bodyState = {
+      state: null,
+      change: function(stateName) {
+        this.state = bodyState[stateName];
+      },
+      idle: {
+        update: function() {
+          if (controls.left || controls.right || controls.up || controls.down)
+            bodyState.change('move');
+        }
+      },
+      move: {
+        update: function() {
+          move = false;
+          pos.l = false;
+          pos.r = false;
+          pos.b = false;
+          pos.t = false;
+          
+          if (controls.left) {
+            oldX = pos.x
+            pos.x -= vspeed;
+            pos.l = true;
+            move = true;
+          } else if (controls.right) {
+            oldX = pos.x
+            pos.x += vspeed;
+            pos.r = true;
+            move = true;
+          }
+          
+          if (controls.up) {
+            oldY = pos.y
+            pos.y -= hspeed;
+            move = true;
+            pos.t = true
+          } else if (controls.down) {
+            oldY = pos.y
+            pos.y += hspeed;
+            move = true;
+            pos.b = true
+          }
+          
+          if (!move) {
+            bodyState.change('idle');
+          }
+        }
+      },
+    };
+    bodyState.state = bodyState.idle;
+	  
+	  function updateMovement() {
+      bodyState.state.update();
+    }
+	  
+	  function update() {
+      updateMovement();
+    }
+	  
+	  let self = {
+	    pos,
+	    update,
+	  }
+	  
+	  return self;
+	}
+	
+	attachListener();
+	update();
+
+</script>

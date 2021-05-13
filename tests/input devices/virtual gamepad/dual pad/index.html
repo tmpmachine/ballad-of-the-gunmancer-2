@@ -1,0 +1,353 @@
+<meta name="viewport" content="width=device-width"/>
+<canvas id="canvas" style="border:1px solid;"></canvas>
+<div>
+  <button onclick="display.requestFullScreen()">fullscreen</button>
+</div>
+<canvas id="canvasPad" style="border:1px solid;"></canvas>
+<div id="debug1"></div>
+
+<script> L = console.log </script>
+<script src="controlpad.js"></script>
+<script src="display.js"></script>
+<script>
+  
+  let controls = {
+  left: false,
+    right: false,
+    up: false,
+    down: false,
+    actionA: false,
+  }
+  
+	let controller = {x: 40, y: canvas.height-40, r: 24, padding: 100};
+	let controller2 = {x: 240, y: canvas.height-40, r: 24, padding: 100};
+  let c = canvas.getContext('2d');
+  let cp = canvasPad.getContext('2d');
+  let pad = ControlPad(cp, controller, redrawPad);
+  let pad2 = ControlPad(cp, controller2, redrawPad);
+	let enemy = Enemy();
+	let display = Display(canvas, onBoundUpdated);
+	function onBoundUpdated(bound, scale) {
+	  controller.sensor.x = 40*scale + bound.x;
+	  controller.sensor.y = (canvas.height-40)*scale + bound.y;
+	  controller.sensor.r = 24*scale
+	  controller.sensor.padding = 100*scale
+	  
+	  controller2.sensor.x = controller2.x*scale + bound.x;
+	  controller2.sensor.y = (canvas.height-40)*scale + bound.y;
+	  controller2.sensor.r = 24*scale
+	  controller2.sensor.padding = 100*scale
+	}
+	let player = Player();
+	let object = [player, enemy];
+	
+	function updateControls() {
+	   controls.right = false;
+      controls.left = false;
+      controls.up = false;
+      controls.down = false;
+      
+      switch (pad.direction) {
+        case 1: controls.right = true; break;
+        case 3: controls.down = true; break;
+        case 5: controls.left = true; break;
+        case 7: controls.up = true; break;
+        
+        case 2: 
+          controls.right = true; 
+          controls.down = true; 
+          break;
+        case 4: 
+          controls.left = true; 
+          controls.down = true; 
+          break;
+        case 6: 
+          controls.left = true; 
+          controls.up = true; 
+          break;
+        case 8: 
+          controls.right = true; 
+          controls.up = true; 
+          break;
+      }
+	}
+	
+	function update() {
+	  c.fillStyle = 'white'
+	  c.fillRect(0,0,c.canvas.width,c.canvas.height)
+	  c.fillStyle = 'black'
+	  window.requestAnimationFrame(update);
+	 // debug1.textContent = pad.direction;
+	  updateControls();
+	  drawObjects();
+    c.drawImage(canvasPad,0,0)
+	}
+	
+	function redrawPad() {
+	  cp.clearRect(0,0,cp.canvas.width,cp.canvas.height)
+    pad.drawCircle();
+    pad2.drawCircle();
+	}
+	redrawPad()
+	
+	function Enemy() {
+	  let pos = {
+  	  x: 10, 
+  	  y: 20,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	
+  	function update() {
+  	}
+  	
+	  let self = {
+	    pos,
+	    update,
+	  }
+	  
+	  return self;
+	}
+	
+	function Player() {
+  	let pos = {
+  	  x: 150, 
+  	  y: 120,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	let vspeed = 2;
+  	let hspeed = 1.6;
+  	
+  	let canShoot = true;
+  	let cooldownMax = {
+	    shoot: 10,
+	  };
+	  let cooldown = JSON.parse(JSON.stringify(cooldownMax));
+  	
+	  let bodyState = {
+      state: null,
+      change: function(stateName) {
+        this.state = bodyState[stateName];
+      },
+      idle: {
+        update: function() {
+          if (controls.left || controls.right || controls.up || controls.down)
+            bodyState.change('move');
+        }
+      },
+      move: {
+        update: function() {
+          move = false;
+          pos.l = false;
+          pos.r = false;
+          pos.b = false;
+          pos.t = false;
+          
+          if (controls.left) {
+            oldX = pos.x
+            pos.x -= vspeed;
+            pos.l = true;
+            move = true;
+          } else if (controls.right) {
+            oldX = pos.x
+            pos.x += vspeed;
+            pos.r = true;
+            move = true;
+          }
+          
+          if (controls.up) {
+            oldY = pos.y
+            pos.y -= hspeed;
+            move = true;
+            pos.t = true
+          } else if (controls.down) {
+            oldY = pos.y
+            pos.y += hspeed;
+            move = true;
+            pos.b = true
+          }
+          
+          if (!move) {
+            bodyState.change('idle');
+          }
+        }
+      },
+    };
+    bodyState.state = bodyState.idle;
+	  
+	  function updateMovement() {
+      bodyState.state.update();
+    }
+	  
+	  function update() {
+      updateMovement();
+      updateCooldown();
+      if (pad2.isActivated) {
+        shoot(pad2.direction);
+      }
+    }
+	  
+	  function shoot(direction) {
+	   let targetPos = {x:pos.x,y:pos.y}
+	   switch (direction) {
+	      case 1: targetPos.x++; break;
+	      case 2: targetPos.x++;
+	      case 3: targetPos.y++; break;
+	      case 4: targetPos.y++;
+	      case 5: targetPos.x--; break;
+	      case 6: targetPos.x--;
+	      case 7: targetPos.y--; break;
+	      case 8: 
+	        targetPos.x++; 
+	        targetPos.y--; 
+	      break;
+	      
+	       // 
+	    }
+	    
+  	  if (canShoot) {
+  	    canShoot = false;
+  	    cooldown.shoot = 0;
+    	  let bullet = Bullet(pos.x, pos.y);
+    	  bullet.setTarget(targetPos);
+    	  object.push(bullet);
+  	  }
+  	}
+  	
+  	function updateCooldown() {
+      for (let key in cooldown) {
+        if (cooldown[key] < cooldownMax[key]) {
+          cooldown[key]++;
+        } else {
+          applyCooldownEffect(key);
+        }
+      }
+    }
+    
+    function applyCooldownEffect(key) {
+      switch (key) {
+        case 'shoot':
+          canShoot = true;
+          break;
+      }
+    }
+	  
+	  let self = {
+	    pos,
+	    update,
+	    shoot,
+	  }
+	  
+	  return self;
+	}
+	
+	
+	function drawObjects() {
+	  for (let i=0; i<object.length; i++) {
+	    object[i].update();
+	    c.fillRect(object[i].pos.x, object[i].pos.y, object[i].pos.w, object[i].pos.h);
+	  }
+	}
+	
+	
+	function Bullet(x, y) {
+	  
+	  let pos = {
+  	  x, 
+  	  y,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	let target = {
+  	  x,
+  	  y,
+  	}
+  	let velocity = {x:0, y:0};
+  	let bulletSpeed = 5;
+    let deltaX, deltaY, velocityScale;
+	  let damage = 74;
+	  
+	  let self = {
+	    pos,
+	    update,
+	    setTarget,
+	  }
+	  
+    
+  	function update() {
+  	  velocity.x = deltaX * velocityScale;
+      velocity.y = deltaY * velocityScale;
+      pos.x += velocity.x;
+      pos.y += velocity.y;
+  	}
+  	
+  	
+  	function setTarget(target) {
+      deltaX = target.x - x;
+      deltaY = target.y - y;
+      let magnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      velocityScale = bulletSpeed / magnitude;
+  	}
+  	
+  	
+  	
+	  return self;
+	}
+	
+  
+	update();
+	display.init();
+	
+  
+  // 
+  // control pad settings
+  // 
+
+    
+  // function redrawPad() {
+    // ptx.clearRect(0,0,c.width,c.height)
+    // ptx.fillRect(0,0,c.width,c.height)
+    // ptx.fillStyle='white';
+    // ptx.fillRect(-pad.cam.x, -pad.cam.y,canSize*scale,canSize*scale)
+    // ptx.drawImage(ctx.canvas, 0,0,canSize,canSize,-pad.cam.x, -pad.cam.y,canSize*scale,canSize*scale)
+    // pad.drawCircle();
+    // L(1)
+    // zpad.drawCircle();
+    // epad.drawCircle();
+  // }  
+  
+  // pad.checkAvailability = function(touch) {
+    // if (touchPool.canvas.includes(touch.identifier) || toolName == 'eraser') {
+      // debug.textContent = 'skipped'+touch.identifier
+      // return false;
+    // }
+    // return true;
+  // }
+  // let zpad = ZoomPad(ptx, controller2, redraw);
+  // let epad = EraserPad(ptx, controller3, redraw);
+  
+  // canvas.addEventListener('mousedown', pad.start);
+  canvas.addEventListener('touchstart', pad.start);
+  document.addEventListener('touchend', pad.end);
+  document.addEventListener('touchmove', pad.move);
+  
+  canvas.addEventListener('touchstart', pad2.start);
+  document.addEventListener('touchend', pad2.end);
+  document.addEventListener('touchmove', pad2.move);
+  
+  // canvas.addEventListener('mousedown', zpad.start);
+  // canvas.addEventListener('touchstart', zpad.start);
+  // document.addEventListener('mouseup', zpad.end);
+  // document.addEventListener('touchend', zpad.end);
+  // document.addEventListener('mousemove', zpad.move);
+  // document.addEventListener('touchmove', zpad.move);
+  
+  // canvas.addEventListener('mousedown', epad.start);
+  // canvas.addEventListener('touchstart', epad.start);
+  // document.addEventListener('mouseup', epad.end);
+  // document.addEventListener('touchend', epad.end);
+  // document.addEventListener('mousemove', epad.move);
+  // document.addEventListener('touchmove', epad.move);
+
+</script>

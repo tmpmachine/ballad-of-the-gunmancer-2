@@ -1,0 +1,231 @@
+<meta name="viewport" content="width=device-width"/>
+<canvas id="canvas" style="border:1px solid;"></canvas>
+<div>
+  <button onclick="display.requestFullScreen()">fullscreen</button>
+</div>
+<canvas id="canvasPad" style="border:1px solid;"></canvas>
+<div id="debug1"></div>
+
+<script> L = console.log </script>
+<script src="controlpad.js"></script>
+<script src="display.js"></script>
+<script src="control.js"></script>
+<script>
+
+	let controller = {x: 40, y: canvas.height-40, r: 24, padding: 100};
+  let c = canvas.getContext('2d');
+  let cp = canvasPad.getContext('2d');
+  let pad = ControlPad(cp, controller, redrawPad);
+	let enemy = Enemy();
+	let display = Display(canvas, onBoundUpdated);
+	function onBoundUpdated(bound, scale) {
+	  controller.sensor.x = 40*scale + bound.x;
+	  controller.sensor.y = (canvas.height-40)*scale + bound.y;
+	  controller.sensor.r = 24*scale
+	  controller.sensor.padding = 100*scale
+	}
+	let player = Player();
+	let object = [player, enemy];
+	
+	function update() {
+	  c.fillStyle = 'white'
+	  c.fillRect(0,0,c.canvas.width,c.canvas.height)
+	  c.fillStyle = 'black'
+	  window.requestAnimationFrame(update);
+	 // debug1.textContent = pad.direction;
+	  drawObjects();
+    c.drawImage(canvasPad,0,0)
+	}
+	
+	function redrawPad() {
+	  cp.clearRect(0,0,cp.canvas.width,cp.canvas.height)
+    pad.drawCircle();
+    controls.right = false;
+    controls.left = false;
+    controls.up = false;
+    controls.down = false;
+    
+    switch (pad.direction) {
+      case 1: controls.right = true; break;
+      case 3: controls.down = true; break;
+      case 5: controls.left = true; break;
+      case 7: controls.up = true; break;
+      
+      case 2: 
+        controls.right = true; 
+        controls.down = true; 
+        break;
+      case 4: 
+        controls.left = true; 
+        controls.down = true; 
+        break;
+      case 6: 
+        controls.left = true; 
+        controls.up = true; 
+        break;
+      case 8: 
+        controls.right = true; 
+        controls.up = true; 
+        break;
+    }
+	}
+	redrawPad()
+	
+	function Enemy() {
+	  let pos = {
+  	  x: 10, 
+  	  y: 20,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	
+  	function update() {
+  	}
+  	
+	  let self = {
+	    pos,
+	    update,
+	  }
+	  
+	  return self;
+	}
+	
+	function Player() {
+  	let pos = {
+  	  x: 150, 
+  	  y: 120,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	let vspeed = 2;
+  	let hspeed = 1.6;
+  	
+	  let bodyState = {
+      state: null,
+      change: function(stateName) {
+        this.state = bodyState[stateName];
+      },
+      idle: {
+        update: function() {
+          if (controls.left || controls.right || controls.up || controls.down)
+            bodyState.change('move');
+        }
+      },
+      move: {
+        update: function() {
+          move = false;
+          pos.l = false;
+          pos.r = false;
+          pos.b = false;
+          pos.t = false;
+          
+          if (controls.left) {
+            oldX = pos.x
+            pos.x -= vspeed;
+            pos.l = true;
+            move = true;
+          } else if (controls.right) {
+            oldX = pos.x
+            pos.x += vspeed;
+            pos.r = true;
+            move = true;
+          }
+          
+          if (controls.up) {
+            oldY = pos.y
+            pos.y -= hspeed;
+            move = true;
+            pos.t = true
+          } else if (controls.down) {
+            oldY = pos.y
+            pos.y += hspeed;
+            move = true;
+            pos.b = true
+          }
+          
+          if (!move) {
+            bodyState.change('idle');
+          }
+        }
+      },
+    };
+    bodyState.state = bodyState.idle;
+	  
+	  function updateMovement() {
+      bodyState.state.update();
+    }
+	  
+	  function update() {
+      updateMovement();
+    }
+	  
+	  let self = {
+	    pos,
+	    update,
+	  }
+	  
+	  return self;
+	}
+	
+	
+	function drawObjects() {
+	  for (let i=0; i<object.length; i++) {
+	    object[i].update();
+	    c.fillRect(object[i].pos.x, object[i].pos.y, object[i].pos.w, object[i].pos.h);
+	  }
+	}
+  
+	attachListener();
+	update();
+	display.init();
+	
+  
+  // 
+  // control pad settings
+  // 
+
+    
+  // function redrawPad() {
+    // ptx.clearRect(0,0,c.width,c.height)
+    // ptx.fillRect(0,0,c.width,c.height)
+    // ptx.fillStyle='white';
+    // ptx.fillRect(-pad.cam.x, -pad.cam.y,canSize*scale,canSize*scale)
+    // ptx.drawImage(ctx.canvas, 0,0,canSize,canSize,-pad.cam.x, -pad.cam.y,canSize*scale,canSize*scale)
+    // pad.drawCircle();
+    // L(1)
+    // zpad.drawCircle();
+    // epad.drawCircle();
+  // }  
+  
+  // pad.checkAvailability = function(touch) {
+    // if (touchPool.canvas.includes(touch.identifier) || toolName == 'eraser') {
+      // debug.textContent = 'skipped'+touch.identifier
+      // return false;
+    // }
+    // return true;
+  // }
+  // let zpad = ZoomPad(ptx, controller2, redraw);
+  // let epad = EraserPad(ptx, controller3, redraw);
+  
+  // canvas.addEventListener('mousedown', pad.start);
+  canvas.addEventListener('touchstart', pad.start);
+  // document.addEventListener('mouseup', pad.end);
+  document.addEventListener('touchend', pad.end);
+  // document.addEventListener('mousemove', pad.move);
+  document.addEventListener('touchmove', pad.move);
+  
+  // canvas.addEventListener('mousedown', zpad.start);
+  // canvas.addEventListener('touchstart', zpad.start);
+  // document.addEventListener('mouseup', zpad.end);
+  // document.addEventListener('touchend', zpad.end);
+  // document.addEventListener('mousemove', zpad.move);
+  // document.addEventListener('touchmove', zpad.move);
+  
+  // canvas.addEventListener('mousedown', epad.start);
+  // canvas.addEventListener('touchstart', epad.start);
+  // document.addEventListener('mouseup', epad.end);
+  // document.addEventListener('touchend', epad.end);
+  // document.addEventListener('mousemove', epad.move);
+  // document.addEventListener('touchmove', epad.move);
+
+</script>

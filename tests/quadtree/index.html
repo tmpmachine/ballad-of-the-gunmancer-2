@@ -1,0 +1,165 @@
+<canvas id="canvas" style="border:1px solid;"></canvas>
+
+<script> L = console.log </script>
+<script src="quadtree.js"></script>
+<script src="control.js"></script>
+<script>
+
+	let c = canvas.getContext('2d');
+	let enemy = Enemy();
+	let player = Player();
+	let tree = new QuadTree({
+	  x: 0,
+	  y: 0,
+	  width: 320,
+	  height: 150,
+	}, 0);
+	let object = [
+	  player,
+	  Enemy(50,50),
+	  Enemy(100,20),
+	  Enemy(130,60),
+	  Enemy(230,110),
+	  Enemy(200,90),
+	  Enemy(200,30),
+  ];
+	
+	let paused = false;
+	
+	function update() {
+	  if (!paused) {
+  	  window.requestAnimationFrame(update);
+  	 // paused = true;
+	  }
+	  c.clearRect(0,0,c.canvas.width,c.canvas.height)
+	  tree.clear();
+	  registerObject();
+	  
+	  c.beginPath();
+	  drawTreeBound(tree);
+	  c.stroke();
+	  
+	  drawObjects()
+	}
+	
+	function drawTreeBound(tree) {
+	  for (let node of tree.nodes) {
+	   // c.moveTo(node.bounds.x,node.bounds.y)
+	    c.rect(node.bounds.x,node.bounds.y,node.bounds.width,node.bounds.height)
+	    drawTreeBound(node);
+	  }
+	}
+	
+	function Enemy(x, y) {
+	  let pos = {
+  	  x, 
+  	  y,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	
+  	function update() {
+  	}
+  	
+	  let self = {
+	    pos,
+	    update,
+	  }
+	  
+	  return self;
+	}
+	
+	function Player() {
+  	let pos = {
+  	  x: 150, 
+  	  y: 120,
+  	  w: 10,
+  	  h: 10,
+  	};
+  	let vspeed = 2;
+  	let hspeed = 2;
+  	
+	  let bodyState = {
+      state: null,
+      change: function(stateName) {
+        this.state = bodyState[stateName];
+      },
+      idle: {
+        update: function() {
+          if (controls.left || controls.right || controls.up || controls.down)
+            bodyState.change('move');
+        }
+      },
+      move: {
+        update: function() {
+          move = false;
+          pos.l = false;
+          pos.r = false;
+          pos.b = false;
+          pos.t = false;
+          
+          if (controls.left) {
+            oldX = pos.x
+            pos.x -= vspeed;
+            pos.l = true;
+            move = true;
+          } else if (controls.right) {
+            oldX = pos.x
+            pos.x += vspeed;
+            pos.r = true;
+            move = true;
+          }
+          
+          if (controls.up) {
+            oldY = pos.y
+            pos.y -= hspeed;
+            move = true;
+            pos.t = true
+          } else if (controls.down) {
+            oldY = pos.y
+            pos.y += hspeed;
+            move = true;
+            pos.b = true
+          }
+          
+          if (!move) {
+            bodyState.change('idle');
+          }
+        }
+      },
+    };
+    bodyState.state = bodyState.idle;
+	  
+	  function updateMovement() {
+      bodyState.state.update();
+    }
+	  
+	  function update() {
+      updateMovement();
+    }
+	  
+	  let self = {
+	    pos,
+	    update,
+	  }
+	  
+	  return self;
+	}
+	
+	function registerObject() {
+	  for (let i=0; i<object.length; i++) {
+	    tree.insert(object[i]);
+	  }
+	}
+	
+	function drawObjects() {
+	  for (let i=0; i<object.length; i++) {
+	    object[i].update();
+	    c.fillRect(object[i].pos.x, object[i].pos.y, object[i].pos.w, object[i].pos.h);
+	  }
+	}
+	
+	attachListener();
+	update();
+
+</script>

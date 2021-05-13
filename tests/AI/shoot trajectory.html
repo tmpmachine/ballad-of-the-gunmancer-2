@@ -1,0 +1,60 @@
+<canvas id="canvas" style="border:1px solid;"></canvas>
+
+<script>
+
+	let c = canvas.getContext('2d');
+	let enemy = {
+	  x: 10, 
+	  y: 20,
+	  w: 10,
+	  h: 10,
+	};
+	let player = {
+	  x: 150, 
+	  y: 120,
+	  w: 10,
+	  h: 10,
+	};
+	let object = [player, enemy];
+	
+	let bulletSpeed = 2;
+	let target = player;
+	var velocityInstance = {x:0, y:0};
+  var bullet = new Bullet(velocityInstance, enemy);
+	
+	
+	function update() {
+	  c.clearRect(0,0,c.canvas.width,c.canvas.height)
+	  window.requestAnimationFrame(update);
+	  drawObjects()
+    bullet.update();
+	  c.fillRect(bullet.x,bullet.y,10,10);
+	}
+	
+	function Bullet(vel, rect){
+	    this.x = rect.x; 
+	    this.y = rect.y;
+      this.velocity = vel;
+    	
+    	deltaX = target.x - (this.x);
+      deltaY = target.y - (this.y);
+      var magnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      var velocityScale = bulletSpeed / magnitude;
+      
+      this.update = function(){
+          this.velocity.x = deltaX * velocityScale;
+          this.velocity.y = deltaY * velocityScale;
+          this.x += this.velocity.x;
+          this.y += this.velocity.y;
+      };
+  };
+	
+	function drawObjects() {
+	  for (let i=0; i<object.length; i++) {
+	    c.fillRect(object[i].x, object[i].y, object[i].w, object[i].h);
+	  }
+	}
+	
+	update();
+
+</script>
