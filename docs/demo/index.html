@@ -1,0 +1,25 @@
+<canvas id="canvas"></canvas>
+<div>
+  <button onclick="display.requestFullScreen()">Full screen</button>
+</div>
+
+<!--<button onclick="unlockAreaX()">Unlock Horizontal Area</button>-->
+<!--<button onclick="unlockAreaY()">Unlock Vertical Area</button>-->
+<div style="font-family:monospace;">
+  <span id="debug1"></span><br></br>
+  <span id="debug2"></span>
+</div>
+<meta name="viewport" content="width=device-width"/>
+
+<style>
+body{margin:0}
+  canvas {    
+  /*  border: 1px solid;*/
+  /*  transform: scale(3);*/
+    /*image-rendering: pixelated;*/
+  /*  transform-origin: 0 0;*/
+  }
+</style>
+<script> L = console.log </script>
+<script> $ = function(selector, node=document) { let nodes = node.querySelectorAll(selector); return selector.startsWith('#') ? nodes[0] : nodes } </script>
+<script src="index.js"></script>
