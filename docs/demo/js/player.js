@@ -355,18 +355,14 @@ let player = (() => {
   function updateMovement() {
     bodyState.state.update();
     updateCooldown();
-    // if (pad2.isActivated) {
-      // shoot(pad2.direction);
-    // }
-    if (direction2 > 0) {
-      shoot(direction2);
+    if (pad2.isActivated) {
+      shoot(pad2.direction);
     }
     // actionState.state.update();
   }
   
   let animaFrame = {
     update: function() {
-      return
       if (tick < frameDuration) {
         tick++;
       } else {

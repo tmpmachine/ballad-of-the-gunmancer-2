@@ -14,8 +14,7 @@ let controller = {x: 40, y: canvas.height-40, r: 24, padding: 100};
         controls.up = false;
         controls.down = false;
       
-      // switch (pad.direction) {
-      switch (direction) {
+      switch (pad.direction) {
         case 1: controls.right = true; break;
         case 3: controls.down = true; break;
         case 5: controls.left = true; break;
@@ -61,140 +60,14 @@ let renderCanvas = document.createElement('canvas');
   let c = renderCanvas.getContext('2d');
   c.imageSmoothingEnabled = false;
   
-  // canvas.addEventListener('touchstart', pad.start);
-  // document.addEventListener('touchend', pad.end);
-  // document.addEventListener('touchmove', pad.move);
+  canvas.addEventListener('touchstart', pad.start);
+  document.addEventListener('touchend', pad.end);
+  document.addEventListener('touchmove', pad.move);
   
-  // canvas.addEventListener('touchstart', pad2.start);
-  // document.addEventListener('touchend', pad2.end);
-  // document.addEventListener('touchmove', pad2.move);
+  canvas.addEventListener('touchstart', pad2.start);
+  document.addEventListener('touchend', pad2.end);
+  document.addEventListener('touchmove', pad2.move);
   
-  // 
-  //  START
-  // 
-  
-  
-	let direction = 0;
-	let direction2 = 0;
-  (() => {
-    
-    canvas.addEventListener('touchstart', start)
-  // 	canvas.addEventListener('touchmove', move)
-    canvas.addEventListener('touchmove', throttled(50, move));
-  	canvas.addEventListener('touchend', end)
-  	
-  	function throttled(delay, fn) {
-    let lastCall = 0;
-    return function (...args) {
-      const now = performance.now();
-      if (now - lastCall < delay) {
-        return;
-      }
-      lastCall = now;
-      return fn(...args);
-    }
-  }
-  	
-  	function end() {
-  	  direction = 0;
-  	  direction2 = 0;
-  	}
-  		let sx, sy,sx2,sy2;
-	function start(e) {
-	  e.preventDefault();
-	  for (let i=0; i<e.changedTouches.length; i++) {
-	    switch (e.changedTouches[i].identifier) {
-	      case 0:
-	       // movePlayer(e.changedTouches[i]);
-          sx = e.changedTouches[i].pageX;
-          sy = e.changedTouches[i].pageY;
-          // x1 = e.changedTouches[i].pageX;	  
-          // y1 = e.changedTouches[i].pageY;	  
-	        break;
-	     case 1:
-	       sx2 = e.changedTouches[i].pageX;
-          sy2 = e.changedTouches[i].pageY;
-	        break;
-	    }
-	  }
-	}
-	function calc(e,sx,sy) {
-    let a = e.pageY - sy;
-    let b = e.pageX - sx;
-    let c = Math.sqrt(a*a + b*b);
-  
-    rad = Math.asin(a*-1 / c);
-    u = 0;
-    r = 0;
-    l = 0;
-    bottom = 0;
-    let direction = 0;
-    
-    if (e.pageY < sy) {
-      u = rad/1.5;
-      if (e.pageX >= sx) {
-        r = 1-u;
-      } else if (e.pageX < sx) {
-        l = 1-u;
-      }
-    } else if (e.pageY == sy) {
-      // debug = 2
-      if (e.pageX > sx)
-        r = 1-bottom;
-      else if (e.pageX < sx)
-        l = 1-bottom;
-    } else if (e.pageY > sy) {
-      // debug = 3
-      bottom = rad/1.5*-1;
-      if (e.pageX > sx)
-        r = 1-bottom;
-      else if (e.pageX < sx)
-        l = 1-bottom;
-    }
-    if (u > .75 && (l < .25 && r < .25))
-      direction = 7;
-    else if (u <= .75 && u >= .24 && (l >= .24))
-      direction = 6;
-    else if (l > .75 && (u < .25 && bottom < .25))
-      direction = 5;
-    else if (bottom <= .75 && bottom >= .24 && (l >= .24))
-      direction = 4;
-    else if (bottom > .75 && (l < .25 && r < .25))
-      direction = 3;
-    else if (bottom <= .75 && bottom >= .24 && (r >= .24))
-      direction = 2;
-    else if (r > .75 && (u < .25 && bottom < .25))
-      direction = 1;
-    else if (u <= .75 && u >= .24 && (r >= .24))
-      direction = 8;
-    return direction
-  }
-  
-  function  move(e) {
-	  e.preventDefault();
-	  
-	  for (let i=0; i<e.changedTouches.length; i++) {
-	    switch (e.changedTouches[i].identifier) {
-	      case 0:
-	        direction = calc(e.changedTouches[i],sx,sy);
-	        break;
-	       case 1: 
-	        direction2 = calc(e.changedTouches[i],sx2,sy2);
-	        if (cool == 0) {
-	          cool = 5
-  	        pool.push(Bullet(p1.x,p1.y))
-	        }
-	       else
-	       cool--
-	        break;
-	    }
-	  }
-	}
-  	
-  })();
-  // 
-  //  END
-  // 
   
 let paused = false;
   let display = new Display(canvas, onBoundUpdated);
@@ -352,7 +225,7 @@ const game = (() => {
 	  c.fillStyle = 'black'
 	  
     // c.drawImage(background,viewport.x,viewport.y)
-    // c.drawImage(world, 0, 0);
+    c.drawImage(world, 0, 0);
     updateControls();
     for (var i = 0; i < objectPool.length; i++) {
       // if (objectPool[i].isRemoved) {
@@ -389,7 +262,7 @@ const game = (() => {
 	  snapCamToArea();
 	  
 	  cr.drawImage(c.canvas, viewport.x, viewport.y, viewport.width, viewport.height, 0, 0, viewport.width, viewport.height);
-    // cr.drawImage(canvasPad,0,0)
+    cr.drawImage(canvasPad,0,0)
     // if (pad.isActivated)
     //   cr.fillRect(10,10,10,10);
     // if (pad2.isActivated)
@@ -422,7 +295,7 @@ const game = (() => {
   function start() {
     drawGameWorld();
     animate();
-    attachListener();
+    // attachListener();
     window.world = ww;
     // objectPool.push(Enemy(150,150))
     // objectPool.push(Enemy(50, 20));
